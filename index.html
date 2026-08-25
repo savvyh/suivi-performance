@@ -1,0 +1,69 @@
+<!doctype html>
+<html lang="fr">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>ESHB - Suivi performances</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Overpass:ital,wght@0,100..900;1,100..900&family=Quicksand:wght@300..700&display=swap"
+      rel="stylesheet"
+    />
+    <link rel="stylesheet" href="styles.css" />
+  </head>
+  <body>
+    <header class="top">
+      <div class="top-inner">
+        <div class="brand">
+          <div class="logo"><img src="assets/logo.png" alt="ESHB" /></div>
+          <div>
+            <h1>Référentiel de formation par catégories</h1>
+            <p>Evian Sports Handball - Du Baby Hand au -18</p>
+          </div>
+        </div>
+        <div class="add-player-bar">
+          <input
+            type="text"
+            id="newPlayerName"
+            placeholder="Nom de la joueuse"
+            required
+          />
+          <input
+            type="text"
+            id="newPlayerCoach"
+            placeholder="Entraîneur"
+            required
+          />
+          <input
+            type="text"
+            id="newPlayerSeason"
+            placeholder="Saison"
+            required
+          />
+          <select id="newPlayerCat"></select>
+          <button class="btn btn-ice" id="addPlayerBtn">
+            Ajouter la joueuse
+          </button>
+        </div>
+      </div>
+    </header>
+
+    <main>
+      <div class="players-switch" id="playersSwitch">
+        <label for="playerSwitchSelect">Joueuse enregistrée :</label>
+        <select id="playerSwitchSelect"></select>
+        <button class="btn btn-outline" id="renamePlayerBtn">Renommer</button>
+        <button class="btn btn-outline" id="deletePlayerBtn">Supprimer</button>
+      </div>
+
+      <div id="playerArea"></div>
+    </main>
+
+    <div class="toast" id="toast">Enregistré</div>
+
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+    <script src="data.js"></script>
+    <script src="app.js"></script>
+  </body>
+</html>
