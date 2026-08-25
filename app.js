@@ -135,28 +135,34 @@ async function renderPlayerArea() {
   let header = `
     <div class="player-header">
       <div class="player-title">
-        <h2><span class="player-avatar">${escapeHtml(player.name.charAt(0).toUpperCase())}</span> ${escapeHtml(player.name)}</h2>
-        ${
-          player.coach || player.season
-            ? `<div class="player-meta">${[
-                player.coach ? `Entraîneur : ${escapeHtml(player.coach)}` : "",
-                player.season ? `Saison : ${escapeHtml(player.season)}` : "",
-              ]
-                .filter(Boolean)
-                .map((t) => `<span class="meta-item">${t}</span>`)
-                .join("")}</div>`
-            : ""
-        }
+        <h2>
+          <span class="player-avatar">${escapeHtml(player.name.charAt(0).toUpperCase())}</span> ${escapeHtml(player.name)}
+          <span class="player-title-actions">
+            <button class="btn-icon rename-btn" title="Renommer">✎</button>
+            <button class="btn-icon delete-btn" title="Supprimer">🗑</button>
+          </span>
+        </h2>
+        <div class="player-meta">
+          ${[
+            player.coach ? `<span class="meta-item">Entraîneur : ${escapeHtml(player.coach)}</span>` : "",
+            player.season ? `<span class="meta-item">Saison : ${escapeHtml(player.season)}</span>` : "",
+          ]
+            .filter(Boolean)
+            .join("")}
+          <span class="meta-item cat-meta-item">
+            <select class="cat-select" aria-label="Catégorie">${catOptions}</select>
+          </span>
+        </div>
       </div>
       <div class="player-controls">
         <div class="player-switch-group">
           <select id="playerSwitchSelect">${switchOptions}</select>
-          <button class="btn-icon" id="renamePlayerBtn" title="Renommer">✎</button>
-          <button class="btn-icon" id="deletePlayerBtn" title="Supprimer">🗑</button>
+          <button class="btn-icon rename-btn" title="Renommer">✎</button>
+          <button class="btn-icon delete-btn" title="Supprimer">🗑</button>
         </div>
         <div class="cat-switch">
           <label>Catégorie :</label>
-          <select id="playerCatSelect">${catOptions}</select>
+          <select class="cat-select">${catOptions}</select>
         </div>
         <div class="subtabs">
           <button class="subtab-btn ${currentView === "cat" ? "active" : ""}" data-view="cat">Fiche compétences</button>
@@ -201,8 +207,10 @@ function legendHtml() {
   return `
     <details class="legend-box">
       <summary>Comment utiliser la grille ?</summary>
-      <p>Pour chaque compétence, cocher le niveau atteint :</p>
-      ${rows}
+      <div class="legend-content">
+        <p>Pour chaque compétence, cocher le niveau atteint :</p>
+        ${rows}
+      </div>
     </details>
   `;
 }
@@ -273,42 +281,43 @@ function renderCategoryHTML(cat, pdata, playerName) {
 
 function renderSynthHTML(pdata, playerName) {
   const sd = pdata.synth;
-  const rows = SYNTH_DOMAINS.map((dom) => {
+  const domainsHtml = SYNTH_DOMAINS.map((dom) => {
     const entry = sd.domains[dom] || { level: "", priorite: "" };
     const opts = levelOptionsHtml(
       `data-domain="${escapeHtml(dom)}"`,
       entry.level,
     );
-    return `<tr>
-      <td>${escapeHtml(dom)}</td>
-      <td><span class="lvl-group">${opts}</span></td>
-      <td><textarea data-domain="${escapeHtml(dom)}" data-priorite="1" rows="2">${escapeHtml(entry.priorite || "")}</textarea></td>
-    </tr>`;
+    return `
+    <div class="section-block">
+      <div class="section-title">${escapeHtml(dom)}</div>
+      <div class="domain-body">
+        <span class="lvl-group">${opts}</span>
+        <textarea data-domain="${escapeHtml(dom)}" data-priorite="1" rows="2" placeholder="Priorité suivante">${escapeHtml(entry.priorite || "")}</textarea>
+      </div>
+    </div>
+  `;
   }).join("");
 
   return `
     <div class="card">
       <div class="cat-head">
-        <h2>Grille club - Synthèse de progression générale</h2>
+        <h2>Synthèse de progression générale</h2>
         <p class="objectif">À utiliser en fin de saison pour transmettre les informations à l'entraîneur de la catégorie suivante.</p>
       </div>
       ${legendHtml()}
-      <div class="table-scroll">
-        <table class="domain-table">
-          <thead><tr><th>Domaine</th><th>Niveau</th><th>Priorité suivante</th></tr></thead>
-          <tbody>${rows}</tbody>
-        </table>
-      </div>
-      <div class="footnote-box">
-        <div class="footnote-row">
-          <span class="footnote-label">Fil rouge</span>
+      ${domainsHtml}
+      <details class="footnote-box">
+        <summary>Fil rouge</summary>
+        <div class="footnote-content">
           <span class="footnote-text">Baby Hand : explorer → -7 : découvrir → -9 : maîtriser les fondamentaux → -11 : jouer ensemble → -13 : lire le jeu → -15 : accélérer et s'adapter → -18 : devenir autonome et performant.</span>
         </div>
-        <div class="footnote-row">
-          <span class="footnote-label">Valeurs club</span>
+      </details>
+      <details class="footnote-box">
+        <summary>Valeurs club</summary>
+        <div class="footnote-content">
           <span class="footnote-text">Engagement • Solidarité • Humilité • Bravoure</span>
         </div>
-      </div>
+      </details>
     </div>
     <div class="export-row">
       <button class="btn btn-navy" id="exportOne">Exporter PDF - ${escapeHtml(playerName)}</button>
@@ -317,15 +326,14 @@ function renderSynthHTML(pdata, playerName) {
 }
 
 function attachPlayerAreaEvents() {
-  const catSel = document.getElementById("playerCatSelect");
-  if (catSel) {
+  document.querySelectorAll(".cat-select").forEach((catSel) => {
     catSel.addEventListener("change", async () => {
       const player = playersIndex.find((p) => p.id === currentPlayerId);
       player.catId = catSel.value;
       await saveIndex();
       renderPlayerArea();
     });
-  }
+  });
   const switchSel = document.getElementById("playerSwitchSelect");
   if (switchSel) {
     switchSel.addEventListener("change", (e) => {
@@ -335,8 +343,7 @@ function attachPlayerAreaEvents() {
       renderPlayerArea();
     });
   }
-  const renameBtn = document.getElementById("renamePlayerBtn");
-  if (renameBtn) {
+  document.querySelectorAll(".rename-btn").forEach((renameBtn) => {
     renameBtn.addEventListener("click", async () => {
       const p = playersIndex.find((pl) => pl.id === currentPlayerId);
       if (!p) return;
@@ -347,9 +354,8 @@ function attachPlayerAreaEvents() {
         renderPlayerArea();
       }
     });
-  }
-  const deleteBtn = document.getElementById("deletePlayerBtn");
-  if (deleteBtn) {
+  });
+  document.querySelectorAll(".delete-btn").forEach((deleteBtn) => {
     deleteBtn.addEventListener("click", async () => {
       const id = currentPlayerId;
       if (!id) return;
@@ -367,7 +373,7 @@ function attachPlayerAreaEvents() {
       currentPlayerId = playersIndex.length ? playersIndex[0].id : null;
       renderPlayerArea();
     });
-  }
+  });
   document.querySelectorAll(".subtab-btn").forEach((btn) => {
     btn.addEventListener("click", () => {
       currentView = btn.dataset.view;
@@ -577,7 +583,7 @@ function drawSynthForPlayer(doc, pdata, player) {
   doc.setFont("helvetica", "bold");
   doc.setFontSize(15);
   doc.setTextColor(18, 40, 69);
-  doc.text("Grille club - Synthèse de progression générale", marginL, y);
+  doc.text("Synthèse de progression générale", marginL, y);
   y += 7;
   doc.setFont("helvetica", "normal");
   doc.setFontSize(10.5);

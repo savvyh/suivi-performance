@@ -207,13 +207,13 @@ main {
 .btn-icon:hover {
   border-color: var(--navy);
 }
-#renamePlayerBtn {
+.rename-btn {
   color: #111;
 }
-#deletePlayerBtn {
+.delete-btn {
   color: #c0392b;
 }
-#deletePlayerBtn:hover {
+.delete-btn:hover {
   border-color: #c0392b;
 }
 .empty-state {
@@ -244,6 +244,7 @@ main {
   justify-content: center;
   width: 24px;
   height: 24px;
+  margin-right: 8px;
   border-radius: 50%;
   background: var(--navy);
   color: #fff;
@@ -261,6 +262,13 @@ main {
   margin: 0;
   font-size: 18px;
   color: var(--navy);
+  display: flex;
+  align-items: center;
+}
+.player-title-actions {
+  display: none;
+  gap: 6px;
+  margin-left: auto;
 }
 .player-meta {
   display: flex;
@@ -271,6 +279,17 @@ main {
 .meta-item + .meta-item {
   border-left: 1px solid var(--line);
   padding-left: 8px;
+}
+.cat-meta-item {
+  display: none;
+}
+.cat-meta-item select {
+  border: none;
+  background: none;
+  color: var(--muted);
+  font-size: 12px;
+  font-weight: inherit;
+  padding: 0;
 }
 .player-controls {
   display: flex;
@@ -337,7 +356,7 @@ main {
 }
 
 .section-block {
-  margin-bottom: 6px;
+  margin-bottom: 14px;
 }
 .section-title {
   font-size: 13px;
@@ -348,7 +367,7 @@ main {
   background: var(--navy-2);
   padding: 7px 10px;
   border-radius: 4px 4px 0 0;
-  margin-top: 14px;
+  margin-top: 30px;
 }
 .item-row {
   display: flex;
@@ -559,31 +578,17 @@ main {
   border: 1.5px solid var(--navy);
 }
 
-.table-scroll {
-  width: 100%;
-  overflow-x: auto;
-  -webkit-overflow-scrolling: touch;
+.domain-body {
+  background: #fff;
+  border: 1px solid var(--line);
+  border-top: none;
+  border-radius: 0 0 4px 4px;
+  padding: 12px 10px;
 }
-.domain-table {
-  width: 100%;
-  min-width: 520px;
-  border-collapse: collapse;
-  margin-top: 10px;
+.domain-body .lvl-group {
+  margin-bottom: 10px;
 }
-.domain-table th {
-  background: var(--navy-2);
-  color: #fff;
-  font-size: 11.5px;
-  padding: 8px;
-  text-align: left;
-}
-.domain-table td {
-  padding: 8px;
-  border-bottom: 1px solid var(--line);
-  font-size: 13px;
-  vertical-align: middle;
-}
-.domain-table textarea {
+.domain-body textarea {
   width: 100%;
   border: 1px solid var(--line);
   border-radius: 6px;
@@ -592,6 +597,9 @@ main {
   font-family: inherit;
   resize: vertical;
   min-height: 32px;
+}
+.domain-body textarea::placeholder {
+  color: transparent;
 }
 
 .legend-box {
@@ -652,33 +660,48 @@ main {
 }
 
 .footnote-box {
-  margin-top: 18px;
-  margin-bottom: 18px;
+  margin-top: 10px;
   padding: 12px 14px;
   background: var(--ice-light);
   border-radius: 4px;
-  display: flex;
-  flex-direction: column;
-  gap: 9px;
 }
-.footnote-row {
-  display: flex;
-  gap: 10px;
-  line-height: 1.55;
+.footnote-box:first-of-type {
+  margin-top: 18px;
 }
-.footnote-label {
-  flex-shrink: 0;
-  width: 82px;
+.footnote-box:last-of-type {
+  margin-bottom: 18px;
+}
+.footnote-box summary {
+  display: flex;
+  align-items: center;
+  gap: 6px;
   font-weight: 700;
   color: var(--navy);
   text-transform: uppercase;
   font-size: 11px;
   letter-spacing: 0.3px;
-  padding-top: 1px;
+  list-style: none;
+  cursor: pointer;
+}
+.footnote-box summary::-webkit-details-marker {
+  display: none;
+}
+.footnote-box summary::before {
+  content: "▸";
+  font-size: 10px;
+  color: var(--ice);
+  transition: transform 0.15s ease;
+}
+.footnote-box[open] summary {
+  margin-bottom: 8px;
+}
+.footnote-box[open] summary::before {
+  transform: rotate(90deg);
 }
 .footnote-text {
   font-size: 12.5px;
   color: var(--navy-2);
+  line-height: 1.55;
 }
 
 .scroll-top-btn {
@@ -738,26 +761,26 @@ main {
     flex-direction: column;
     align-items: stretch;
   }
+  .player-title-actions {
+    display: flex;
+  }
   .player-controls {
     width: 100%;
     justify-content: flex-start;
+    margin-top: 14px;
   }
   .player-switch-group {
-    width: 100%;
-    border-right: none;
-    padding-right: 0;
-    border-bottom: 1px solid var(--line);
-    padding-bottom: 10px;
-  }
-  .player-switch-group select {
-    flex: 1;
-    min-width: 0;
+    display: none;
   }
   .cat-switch {
-    width: 100%;
+    display: none;
   }
-  .cat-switch select {
-    flex: 1;
+  .player-meta {
+    margin-top: 8px;
+    flex-wrap: wrap;
+  }
+  .cat-meta-item {
+    display: inline-flex;
   }
   .subtabs {
     width: 100%;
@@ -767,11 +790,20 @@ main {
     text-align: center;
   }
 
+  #exportAll {
+    display: none;
+  }
+
   .card {
+    position: relative;
     padding: 12px 12px 4px;
+  }
+  .cat-head {
+    padding-right: 36px;
   }
   .cat-head h2 {
     font-size: 17px;
+    margin-bottom: 10px;
   }
   .item-row {
     flex-direction: column;
@@ -787,55 +819,71 @@ main {
     font-size: 10px;
   }
 
-  .legend-row,
-  .footnote-row {
+  .footnote-box {
+    padding: 10px 12px;
+  }
+
+  .legend-box {
+    position: absolute;
+    top: 12px;
+    right: 12px;
+    padding: 0;
+    background: none;
+    border: none;
+  }
+  .legend-box summary {
+    width: 26px;
+    height: 26px;
+    border-radius: 50%;
+    background: var(--ice-light);
+    justify-content: center;
+    padding: 0;
+    font-size: 0;
+  }
+  .legend-box summary::before {
+    content: "?";
+    font-size: 13px;
+    font-weight: 800;
+    color: var(--navy);
+    transform: none;
+  }
+  .legend-box[open] summary {
+    margin-bottom: 0;
+  }
+  .legend-box[open] summary::before {
+    transform: none;
+  }
+  .legend-box .legend-content {
+    position: absolute;
+    top: 32px;
+    right: 0;
+    z-index: 25;
+    width: min(280px, calc(100vw - 48px));
+    background: #fff;
+    border: 1px solid var(--line);
+    border-radius: 8px;
+    padding: 12px 14px;
+    box-shadow: 0 8px 24px rgba(0, 0, 0, 0.18);
+  }
+  .legend-row {
     flex-direction: column;
     gap: 2px;
   }
-  .legend-label,
-  .footnote-label {
+  .legend-label {
     width: auto;
   }
 
-  .table-scroll {
-    overflow-x: visible;
-  }
-  .domain-table {
-    min-width: 0;
-  }
-  .domain-table thead {
-    display: none;
-  }
-  .domain-table tbody,
-  .domain-table tr,
-  .domain-table td {
-    display: block;
-    width: 100%;
-  }
-  .domain-table tr {
-    padding: 10px 0;
-    border-bottom: 1px solid var(--line);
-  }
-  .domain-table td {
-    padding: 4px 0;
-    border-bottom: none;
-  }
-  .domain-table td:first-child {
-    font-weight: 700;
+  .section-title {
+    background: rgba(18, 40, 69, 0.08);
     color: var(--navy);
-    font-size: 13.5px;
   }
-  .domain-table .lvl-group {
+
+  .domain-body .lvl-group {
     flex-wrap: wrap;
     gap: 10px 16px;
   }
-  .domain-table td:last-child::before {
-    content: "Priorité suivante";
-    display: block;
-    font-size: 11px;
-    font-weight: 700;
+  .domain-body textarea::placeholder {
     color: var(--muted);
-    margin-bottom: 3px;
   }
 
   .scroll-top-btn {
