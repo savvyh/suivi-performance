@@ -78,17 +78,9 @@ async function savePlayerData(id) {
       JSON.stringify(playersCache[id]),
       false,
     );
-    showToast("Enregistré");
   } catch (e) {
     console.error(e);
   }
-}
-function showToast(msg) {
-  const t = document.getElementById("toast");
-  t.textContent = msg;
-  t.classList.add("show");
-  clearTimeout(t._h);
-  t._h = setTimeout(() => t.classList.remove("show"), 1200);
 }
 function escapeHtml(s) {
   return (s || "").replace(
@@ -109,23 +101,6 @@ function renderNewPlayerCatSelect() {
   sel.innerHTML = CATEGORIES.map(
     (c) => `<option value="${c.id}">${c.label}</option>`,
   ).join("");
-}
-
-function renderPlayersSwitch() {
-  const bar = document.getElementById("playersSwitch");
-  const sel = document.getElementById("playerSwitchSelect");
-  if (playersIndex.length === 0) {
-    bar.style.display = "none";
-    sel.innerHTML = "";
-    return;
-  }
-  bar.style.display = "";
-  sel.innerHTML = playersIndex
-    .map(
-      (p) =>
-        `<option value="${p.id}" ${p.id === currentPlayerId ? "selected" : ""}>${escapeHtml(p.name)} (${catLabel(p.catId)})</option>`,
-    )
-    .join("");
 }
 
 async function renderPlayerArea() {
@@ -150,27 +125,43 @@ async function renderPlayerArea() {
     (c) =>
       `<option value="${c.id}" ${c.id === player.catId ? "selected" : ""}>${c.label}</option>`,
   ).join("");
+  const switchOptions = playersIndex
+    .map(
+      (p) =>
+        `<option value="${p.id}" ${p.id === currentPlayerId ? "selected" : ""}>${escapeHtml(p.name)} (${catLabel(p.catId)})</option>`,
+    )
+    .join("");
 
   let header = `
     <div class="player-header">
-      <h2>👤 ${escapeHtml(player.name)}</h2>
-      <div class="cat-switch">
-        <label>Catégorie :</label>
-        <select id="playerCatSelect">${catOptions}</select>
+      <div class="player-title">
+        <h2><span class="player-avatar">${escapeHtml(player.name.charAt(0).toUpperCase())}</span> ${escapeHtml(player.name)}</h2>
+        ${
+          player.coach || player.season
+            ? `<div class="player-meta">${[
+                player.coach ? `Entraîneur : ${escapeHtml(player.coach)}` : "",
+                player.season ? `Saison : ${escapeHtml(player.season)}` : "",
+              ]
+                .filter(Boolean)
+                .map((t) => `<span class="meta-item">${t}</span>`)
+                .join("")}</div>`
+            : ""
+        }
       </div>
-      ${
-        player.coach || player.season
-          ? `<div class="player-meta">${[
-              player.coach ? `Entraîneur : ${escapeHtml(player.coach)}` : "",
-              player.season ? `Saison : ${escapeHtml(player.season)}` : "",
-            ]
-              .filter(Boolean)
-              .join(" · ")}</div>`
-          : ""
-      }
-      <div class="subtabs">
-        <button class="subtab-btn ${currentView === "cat" ? "active" : ""}" data-view="cat">Fiche compétences</button>
-        <button class="subtab-btn ${currentView === "synth" ? "active" : ""}" data-view="synth">Synthèse</button>
+      <div class="player-controls">
+        <div class="player-switch-group">
+          <select id="playerSwitchSelect">${switchOptions}</select>
+          <button class="btn-icon" id="renamePlayerBtn" title="Renommer">✎</button>
+          <button class="btn-icon" id="deletePlayerBtn" title="Supprimer">🗑</button>
+        </div>
+        <div class="cat-switch">
+          <label>Catégorie :</label>
+          <select id="playerCatSelect">${catOptions}</select>
+        </div>
+        <div class="subtabs">
+          <button class="subtab-btn ${currentView === "cat" ? "active" : ""}" data-view="cat">Fiche compétences</button>
+          <button class="subtab-btn ${currentView === "synth" ? "active" : ""}" data-view="synth">Synthèse</button>
+        </div>
       </div>
     </div>
   `;
@@ -196,6 +187,24 @@ function levelOptionsHtml(groupAttrs, activeVal) {
     </span>
   `,
   ).join("");
+}
+
+function legendHtml() {
+  const rows = LEVEL_LEGEND.map(
+    (l) => `
+    <div class="legend-row">
+      <span class="legend-label">${escapeHtml(l.label)}</span>
+      <span class="legend-desc">${escapeHtml(l.desc)}</span>
+    </div>
+  `,
+  ).join("");
+  return `
+    <details class="legend-box">
+      <summary>Comment utiliser la grille ?</summary>
+      <p>Pour chaque compétence, cocher le niveau atteint :</p>
+      ${rows}
+    </details>
+  `;
 }
 
 function renderCategoryHTML(cat, pdata, playerName) {
@@ -244,6 +253,7 @@ function renderCategoryHTML(cat, pdata, playerName) {
         <h2>${escapeHtml(cat.full)}</h2>
         <p class="objectif">${escapeHtml(cat.objectif)}</p>
       </div>
+      ${legendHtml()}
       ${sectionsHtml}
       <div class="bilan">
         <h3>Bilan entraîneur</h3>
@@ -272,24 +282,34 @@ function renderSynthHTML(pdata, playerName) {
     return `<tr>
       <td>${escapeHtml(dom)}</td>
       <td><span class="lvl-group">${opts}</span></td>
-      <td><input type="text" data-domain="${escapeHtml(dom)}" data-priorite="1" value="${escapeHtml(entry.priorite || "")}" placeholder="Priorité suivante"></td>
+      <td><textarea data-domain="${escapeHtml(dom)}" data-priorite="1" rows="2">${escapeHtml(entry.priorite || "")}</textarea></td>
     </tr>`;
   }).join("");
 
   return `
     <div class="card">
       <div class="cat-head">
-        <h2>Grille club — Synthèse de progression générale</h2>
+        <h2>Grille club - Synthèse de progression générale</h2>
         <p class="objectif">À utiliser en fin de saison pour transmettre les informations à l'entraîneur de la catégorie suivante.</p>
       </div>
+      ${legendHtml()}
       <table class="domain-table">
         <thead><tr><th>Domaine</th><th>Niveau</th><th>Priorité suivante</th></tr></thead>
         <tbody>${rows}</tbody>
       </table>
-      <p style="font-size:12px;color:var(--muted);margin:16px 0 8px;">Fil rouge : Baby Hand : explorer → -7 : découvrir → -9 : maîtriser les fondamentaux → -11 : jouer ensemble → -13 : lire le jeu → -15 : accélérer et s'adapter → -18 : devenir autonome et performant.<br>Valeurs club : Engagement • Solidarité • Humilité • Bravoure</p>
+      <div class="footnote-box">
+        <div class="footnote-row">
+          <span class="footnote-label">Fil rouge</span>
+          <span class="footnote-text">Baby Hand : explorer → -7 : découvrir → -9 : maîtriser les fondamentaux → -11 : jouer ensemble → -13 : lire le jeu → -15 : accélérer et s'adapter → -18 : devenir autonome et performant.</span>
+        </div>
+        <div class="footnote-row">
+          <span class="footnote-label">Valeurs club</span>
+          <span class="footnote-text">Engagement • Solidarité • Humilité • Bravoure</span>
+        </div>
+      </div>
     </div>
     <div class="export-row">
-      <button class="btn btn-navy" id="exportOne">Exporter PDF — ${escapeHtml(playerName)}</button>
+      <button class="btn btn-navy" id="exportOne">Exporter PDF - ${escapeHtml(playerName)}</button>
     </div>
   `;
 }
@@ -301,7 +321,48 @@ function attachPlayerAreaEvents() {
       const player = playersIndex.find((p) => p.id === currentPlayerId);
       player.catId = catSel.value;
       await saveIndex();
-      renderPlayersSwitch();
+      renderPlayerArea();
+    });
+  }
+  const switchSel = document.getElementById("playerSwitchSelect");
+  if (switchSel) {
+    switchSel.addEventListener("change", (e) => {
+      currentPlayerId = e.target.value;
+      currentView = "cat";
+      showingPreview = false;
+      renderPlayerArea();
+    });
+  }
+  const renameBtn = document.getElementById("renamePlayerBtn");
+  if (renameBtn) {
+    renameBtn.addEventListener("click", async () => {
+      const p = playersIndex.find((pl) => pl.id === currentPlayerId);
+      if (!p) return;
+      const newName = prompt("Nouveau nom de la joueuse :", p.name);
+      if (newName && newName.trim()) {
+        p.name = newName.trim();
+        await saveIndex();
+        renderPlayerArea();
+      }
+    });
+  }
+  const deleteBtn = document.getElementById("deletePlayerBtn");
+  if (deleteBtn) {
+    deleteBtn.addEventListener("click", async () => {
+      const id = currentPlayerId;
+      if (!id) return;
+      const p = playersIndex.find((pl) => pl.id === id);
+      if (
+        !confirm(`Supprimer ${p ? p.name : "cette joueuse"} et ses données ?`)
+      )
+        return;
+      playersIndex = playersIndex.filter((pl) => pl.id !== id);
+      delete playersCache[id];
+      try {
+        await window.storage.delete("player-data:" + id, false);
+      } catch (err) {}
+      await saveIndex();
+      currentPlayerId = playersIndex.length ? playersIndex[0].id : null;
       renderPlayerArea();
     });
   }
@@ -333,7 +394,7 @@ function attachPlayerAreaEvents() {
       scheduleSave(currentPlayerId);
     });
   });
-  document.querySelectorAll("input[data-priorite]").forEach((inp) => {
+  document.querySelectorAll("textarea[data-priorite]").forEach((inp) => {
     inp.addEventListener("input", () => {
       const dom = inp.dataset.domain;
       const sd = playersCache[currentPlayerId].synth;
@@ -366,7 +427,7 @@ function attachPlayerAreaEvents() {
   if (exAll) exAll.addEventListener("click", () => exportPDF(true));
 }
 
-function drawCategoryForPlayer(doc, cat, pdata, playerName) {
+function drawCategoryForPlayer(doc, cat, pdata, player) {
   const marginL = 15,
     marginR = 15,
     pageW = 210,
@@ -392,15 +453,22 @@ function drawCategoryForPlayer(doc, cat, pdata, playerName) {
   doc.setFont("helvetica", "normal");
   doc.setFontSize(10.5);
   doc.setTextColor(20, 30, 40);
-  doc.text("Nom du joueur : " + playerName, marginL, y);
+  doc.text("Nom du joueur : " + player.name, marginL, y);
   y += 5;
+  if (player.coach) {
+    doc.text("Nom de l'entraîneur : " + player.coach, marginL, y);
+    y += 5;
+  }
+  if (player.season) {
+    doc.text("Saison : " + player.season, marginL, y);
+    y += 5;
+  }
   doc.text(
-    "Saison : ____________          Date export : " +
-      new Date().toLocaleDateString("fr-FR"),
+    "Date export : " + new Date().toLocaleDateString("fr-FR"),
     marginL,
     y,
   );
-  y += 7;
+  y += 8;
 
   const colW = 25,
     colGap = 3;
@@ -417,35 +485,24 @@ function drawCategoryForPlayer(doc, cat, pdata, playerName) {
       y = 18;
     }
   }
-  function drawColumnHeaders() {
-    doc.setFont("helvetica", "bold");
-    doc.setFontSize(7.3);
-    doc.setTextColor(255, 255, 255);
+  function drawSectionHeader(sec) {
     doc.setFillColor(28, 58, 99);
-    doc.rect(col[0] - 1, y - 4.2, colW, 5.4, "F");
-    doc.rect(col[1] - 1, y - 4.2, colW, 5.4, "F");
-    doc.rect(col[2] - 1, y - 4.2, colW, 5.4, "F");
-    doc.text("À découvrir", col[0] + colW / 2 - 1, y - 0.8, {
-      align: "center",
+    doc.rect(marginL - 1, y - 4.2, contentRight - marginL + 2, 6.4, "F");
+    doc.setTextColor(255, 255, 255);
+    doc.setFont("helvetica", "bold");
+    doc.setFontSize(9.5);
+    doc.text(sec.t, marginL, y - 0.6);
+    doc.setFontSize(7.3);
+    LEVELS.forEach((l, idx) => {
+      doc.text(l.label, col[idx] + colW / 2 - 1, y - 0.6, { align: "center" });
     });
-    doc.text("En acquisition", col[1] + colW / 2 - 1, y - 0.8, {
-      align: "center",
-    });
-    doc.text("Maîtrisé", col[2] + colW / 2 - 1, y - 0.8, { align: "center" });
-    y += 3;
+    y += 7;
   }
 
   const cd = pdata[cat.id];
   cat.sections.forEach((sec) => {
     ensureSpace(14);
-    doc.setFillColor(28, 58, 99);
-    doc.setTextColor(255, 255, 255);
-    doc.setFont("helvetica", "bold");
-    doc.setFontSize(9.5);
-    doc.rect(marginL - 1, y - 4.2, contentRight - marginL + 2, 5.6, "F");
-    doc.text(sec.t, marginL, y - 0.8);
-    y += 4;
-    drawColumnHeaders();
+    drawSectionHeader(sec);
 
     sec.i.forEach((item) => {
       const key = sec.t + "|" + item;
@@ -457,14 +514,13 @@ function drawCategoryForPlayer(doc, cat, pdata, playerName) {
       doc.setFontSize(8.7);
       doc.setTextColor(25, 35, 45);
       doc.text(lines, marginL, y);
-      const levels = ["D", "A", "M"];
-      levels.forEach((lv, idx) => {
-        const bx = col[idx],
+      LEVELS.forEach((l, idx) => {
+        const bx = col[idx] + colW / 2 - 1.7 - 1,
           by = y - 3.4,
           bs = 3.4;
         doc.setDrawColor(120, 130, 145);
         doc.rect(bx, by, bs, bs);
-        if (val === lv) {
+        if (val === l.k) {
           doc.setFillColor(47, 158, 92);
           doc.rect(bx + 0.5, by + 0.5, bs - 1, bs - 1, "F");
         }
@@ -485,7 +541,7 @@ function drawCategoryForPlayer(doc, cat, pdata, playerName) {
   y += 6;
   BILAN_FIELDS.forEach((f) => {
     const val = (cd.bilan[f.k] || "").trim();
-    const lines = doc.splitTextToSize(val || "—", contentRight - marginL);
+    const lines = doc.splitTextToSize(val || "-", contentRight - marginL);
     ensureSpace(lines.length * 4.4 + 7);
     doc.setFont("helvetica", "bold");
     doc.setFontSize(8.8);
@@ -509,38 +565,63 @@ function drawCategoryForPlayer(doc, cat, pdata, playerName) {
   );
 }
 
-function drawSynthForPlayer(doc, pdata, playerName) {
+function drawSynthForPlayer(doc, pdata, player) {
   const marginL = 15,
-    contentRight = 195,
+    marginR = 15,
+    pageW = 210,
     pageH = 297;
+  const contentRight = pageW - marginR;
   let y = 18;
   doc.setFont("helvetica", "bold");
   doc.setFontSize(15);
   doc.setTextColor(18, 40, 69);
-  doc.text("Grille club — Synthèse de progression générale", marginL, y);
+  doc.text("Grille club - Synthèse de progression générale", marginL, y);
   y += 7;
   doc.setFont("helvetica", "normal");
   doc.setFontSize(10.5);
-  doc.text("Nom du joueur : " + playerName, marginL, y);
+  doc.setTextColor(20, 30, 40);
+  doc.text("Nom du joueur : " + player.name, marginL, y);
   y += 5;
+  if (player.coach) {
+    doc.text("Nom de l'entraîneur : " + player.coach, marginL, y);
+    y += 5;
+  }
+  if (player.season) {
+    doc.text("Saison : " + player.season, marginL, y);
+    y += 5;
+  }
   doc.text(
     "Date export : " + new Date().toLocaleDateString("fr-FR"),
     marginL,
     y,
   );
-  y += 8;
+  y += 9;
 
-  const colLvl = 130,
-    colPrio = 150;
-  doc.setFillColor(28, 58, 99);
-  doc.setTextColor(255, 255, 255);
-  doc.setFont("helvetica", "bold");
-  doc.setFontSize(8.5);
-  doc.rect(marginL - 1, y - 4.2, contentRight - marginL + 2, 6, "F");
-  doc.text("Domaine", marginL, y - 0.8);
-  doc.text("Niveau (D/A/M)", colLvl, y - 0.8);
-  doc.text("Priorité suivante", colPrio, y - 0.8);
-  y += 4;
+  const colW = 23,
+    colGap = 4;
+  const col = [
+    marginL + 47,
+    marginL + 47 + colW + colGap,
+    marginL + 47 + (colW + colGap) * 2,
+  ];
+  const colPrio = col[2] + colW + 9;
+
+  function drawHeader() {
+    doc.setFillColor(28, 58, 99);
+    doc.setTextColor(255, 255, 255);
+    doc.setFont("helvetica", "bold");
+    doc.setFontSize(8.5);
+    doc.rect(marginL - 1, y - 4.2, contentRight - marginL + 2, 6.4, "F");
+    doc.text("Domaine", marginL, y - 0.6);
+    doc.setFontSize(7);
+    LEVELS.forEach((l, idx) => {
+      doc.text(l.label, col[idx] + colW / 2, y - 0.6, { align: "center" });
+    });
+    doc.setFontSize(8.5);
+    doc.text("Priorité suivante", colPrio, y - 0.6);
+    y += 10;
+  }
+  drawHeader();
 
   const sd = pdata.synth;
   SYNTH_DOMAINS.forEach((dom) => {
@@ -549,31 +630,38 @@ function drawSynthForPlayer(doc, pdata, playerName) {
       entry.priorite || "",
       contentRight - colPrio,
     );
-    const rowH = Math.max(6, prioLines.length * 4);
+    const rowH = Math.max(9, prioLines.length * 4.2 + 3);
     if (y + rowH > pageH - 15) {
       doc.addPage();
       y = 18;
+      drawHeader();
     }
     doc.setFont("helvetica", "normal");
     doc.setFontSize(8.7);
     doc.setTextColor(25, 35, 45);
     doc.text(dom, marginL, y);
-    doc.setFontSize(8);
-    doc.text(
-      entry.level === "D"
-        ? "[X] D  [ ] A  [ ] M"
-        : entry.level === "A"
-          ? "[ ] D  [X] A  [ ] M"
-          : entry.level === "M"
-            ? "[ ] D  [ ] A  [X] M"
-            : "[ ] D  [ ] A  [ ] M",
-      colLvl,
-      y,
-    );
-    if (prioLines.length) doc.text(prioLines, colPrio, y);
+
+    LEVELS.forEach((l, idx) => {
+      const bx = col[idx] + colW / 2 - 1.7,
+        by = y - 3.4,
+        bs = 3.4;
+      doc.setDrawColor(120, 130, 145);
+      doc.rect(bx, by, bs, bs);
+      if (entry.level === l.k) {
+        doc.setFillColor(47, 158, 92);
+        doc.rect(bx + 0.5, by + 0.5, bs - 1, bs - 1, "F");
+      }
+    });
+
+    if (prioLines.length) {
+      doc.setFontSize(8.7);
+      doc.setTextColor(25, 35, 45);
+      doc.text(prioLines, colPrio, y);
+    }
+
     doc.setDrawColor(220, 226, 232);
-    doc.line(marginL - 1, y + rowH - 4.5, contentRight + 1, y + rowH - 4.5);
-    y += rowH + 1;
+    doc.line(marginL - 1, y + rowH - 6, contentRight + 1, y + rowH - 6);
+    y += rowH;
   });
 
   doc.setFontSize(7);
@@ -603,9 +691,9 @@ async function exportPDF(allInCategory) {
     if (!first) doc.addPage();
     first = false;
     if (isSynth) {
-      drawSynthForPlayer(doc, pdata, p.name);
+      drawSynthForPlayer(doc, pdata, p);
     } else {
-      drawCategoryForPlayer(doc, cat, pdata, p.name);
+      drawCategoryForPlayer(doc, cat, pdata, p);
     }
   }
   const fname = allInCategory
@@ -627,50 +715,6 @@ function attachGlobalEvents() {
     currentView = "cat";
     renderPlayerArea();
   });
-
-  document
-    .getElementById("playerSwitchSelect")
-    .addEventListener("change", (e) => {
-      currentPlayerId = e.target.value;
-      currentView = "cat";
-      showingPreview = false;
-      renderPlayerArea();
-    });
-
-  document
-    .getElementById("renamePlayerBtn")
-    .addEventListener("click", async () => {
-      const p = playersIndex.find((pl) => pl.id === currentPlayerId);
-      if (!p) return;
-      const newName = prompt("Nouveau nom de la joueuse :", p.name);
-      if (newName && newName.trim()) {
-        p.name = newName.trim();
-        await saveIndex();
-        renderPlayersSwitch();
-        renderPlayerArea();
-      }
-    });
-
-  document
-    .getElementById("deletePlayerBtn")
-    .addEventListener("click", async () => {
-      const id = currentPlayerId;
-      if (!id) return;
-      const p = playersIndex.find((pl) => pl.id === id);
-      if (
-        !confirm(`Supprimer ${p ? p.name : "cette joueuse"} et ses données ?`)
-      )
-        return;
-      playersIndex = playersIndex.filter((pl) => pl.id !== id);
-      delete playersCache[id];
-      try {
-        await window.storage.delete("player-data:" + id, false);
-      } catch (err) {}
-      await saveIndex();
-      currentPlayerId = playersIndex.length ? playersIndex[0].id : null;
-      renderPlayersSwitch();
-      renderPlayerArea();
-    });
 }
 
 async function addPlayer() {
@@ -702,8 +746,17 @@ async function addPlayer() {
   currentPlayerId = id;
   currentView = "cat";
   showingPreview = false;
-  renderPlayersSwitch();
   renderPlayerArea();
+}
+
+function attachScrollTopButton() {
+  const btn = document.getElementById("scrollTopBtn");
+  window.addEventListener("scroll", () => {
+    btn.classList.toggle("show", window.scrollY > 300);
+  });
+  btn.addEventListener("click", () => {
+    window.scrollTo({ top: 0, behavior: "smooth" });
+  });
 }
 
 async function init() {
@@ -713,7 +766,7 @@ async function init() {
     currentPlayerId = playersIndex[0].id;
   }
   attachGlobalEvents();
-  renderPlayersSwitch();
+  attachScrollTopButton();
   await renderPlayerArea();
 }
 init();

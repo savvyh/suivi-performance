@@ -134,6 +134,12 @@ const CATEGORIES = [
 
 const SYNTH_DOMAINS = ["Motricité / coordination","Passe / réception","Tir","Dribble","1c1 offensif","1c1 défensif","Jeu sans ballon","Jeu collectif","Défense collective","Transition","Lecture du jeu","Gardien","Physique / prévention","Mental / autonomie"];
 
+const LEVEL_LEGEND = [
+  {k:'D', label:"À découvrir", desc:"la compétence n'est pas encore installée."},
+  {k:'A', label:"En acquisition", desc:"la compétence est réalisée mais reste irrégulière ou dépend du contexte."},
+  {k:'M', label:"Maîtrisé", desc:"la compétence est réalisée régulièrement, avec prise d'information et efficacité."}
+];
+
 const BILAN_FIELDS = [
   {k:'pointsForts', label:'Points forts'},
   {k:'priorites', label:'Priorités de progression'},
