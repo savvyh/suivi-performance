@@ -293,10 +293,12 @@ function renderSynthHTML(pdata, playerName) {
         <p class="objectif">À utiliser en fin de saison pour transmettre les informations à l'entraîneur de la catégorie suivante.</p>
       </div>
       ${legendHtml()}
-      <table class="domain-table">
-        <thead><tr><th>Domaine</th><th>Niveau</th><th>Priorité suivante</th></tr></thead>
-        <tbody>${rows}</tbody>
-      </table>
+      <div class="table-scroll">
+        <table class="domain-table">
+          <thead><tr><th>Domaine</th><th>Niveau</th><th>Priorité suivante</th></tr></thead>
+          <tbody>${rows}</tbody>
+        </table>
+      </div>
       <div class="footnote-box">
         <div class="footnote-row">
           <span class="footnote-label">Fil rouge</span>

@@ -559,8 +559,14 @@ main {
   border: 1.5px solid var(--navy);
 }
 
+.table-scroll {
+  width: 100%;
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
+}
 .domain-table {
   width: 100%;
+  min-width: 520px;
   border-collapse: collapse;
   margin-top: 10px;
 }
@@ -704,4 +710,136 @@ main {
 }
 .scroll-top-btn:hover {
   opacity: 0.9;
+}
+
+@media (max-width: 640px) {
+  header.top {
+    position: static;
+    padding: 12px 12px 12px;
+  }
+  .brand h1 {
+    font-size: 15px;
+  }
+  .add-player-bar {
+    flex-direction: column;
+    align-items: stretch;
+  }
+  .add-player-bar input[type="text"],
+  .add-player-bar select,
+  .add-player-bar button {
+    width: 100%;
+  }
+
+  main {
+    padding: 14px 10px 50px;
+  }
+
+  .player-header {
+    flex-direction: column;
+    align-items: stretch;
+  }
+  .player-controls {
+    width: 100%;
+    justify-content: flex-start;
+  }
+  .player-switch-group {
+    width: 100%;
+    border-right: none;
+    padding-right: 0;
+    border-bottom: 1px solid var(--line);
+    padding-bottom: 10px;
+  }
+  .player-switch-group select {
+    flex: 1;
+    min-width: 0;
+  }
+  .cat-switch {
+    width: 100%;
+  }
+  .cat-switch select {
+    flex: 1;
+  }
+  .subtabs {
+    width: 100%;
+  }
+  .subtab-btn {
+    flex: 1;
+    text-align: center;
+  }
+
+  .card {
+    padding: 12px 12px 4px;
+  }
+  .cat-head h2 {
+    font-size: 17px;
+  }
+  .item-row {
+    flex-direction: column;
+    align-items: stretch;
+    gap: 8px;
+  }
+  .lvl-group {
+    width: 100%;
+    justify-content: space-between;
+    gap: 6px;
+  }
+  .lvl-option span.lbl {
+    font-size: 10px;
+  }
+
+  .legend-row,
+  .footnote-row {
+    flex-direction: column;
+    gap: 2px;
+  }
+  .legend-label,
+  .footnote-label {
+    width: auto;
+  }
+
+  .table-scroll {
+    overflow-x: visible;
+  }
+  .domain-table {
+    min-width: 0;
+  }
+  .domain-table thead {
+    display: none;
+  }
+  .domain-table tbody,
+  .domain-table tr,
+  .domain-table td {
+    display: block;
+    width: 100%;
+  }
+  .domain-table tr {
+    padding: 10px 0;
+    border-bottom: 1px solid var(--line);
+  }
+  .domain-table td {
+    padding: 4px 0;
+    border-bottom: none;
+  }
+  .domain-table td:first-child {
+    font-weight: 700;
+    color: var(--navy);
+    font-size: 13.5px;
+  }
+  .domain-table .lvl-group {
+    flex-wrap: wrap;
+    gap: 10px 16px;
+  }
+  .domain-table td:last-child::before {
+    content: "Priorité suivante";
+    display: block;
+    font-size: 11px;
+    font-weight: 700;
+    color: var(--muted);
+    margin-bottom: 3px;
+  }
+
+  .scroll-top-btn {
+    right: 14px;
+    bottom: 14px;
+  }
 }
