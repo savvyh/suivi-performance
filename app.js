@@ -697,7 +697,7 @@ async function exportPDF(allInCategory) {
     }
   }
   const fname = allInCategory
-    ? `ESHB_${isSynth ? "Synthese" : cat.label}_${cat ? cat.label : ""}_joueuses.pdf`
+    ? `ESHB_${isSynth ? "Synthese" : cat.label}_joueuses.pdf`
     : `ESHB_${isSynth ? "Synthese" : cat.label}_${player.name}.pdf`;
   doc.save(fname.replace(/\s+/g, "_"));
 }
