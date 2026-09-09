@@ -150,7 +150,9 @@ async function renderPlayerArea() {
         <div class="player-meta">
           ${[
             player.coach ? `<span class="meta-item">Entraîneur : ${escapeHtml(player.coach)}</span>` : "",
-            player.interviewDate ? `<span class="meta-item">Date de l'entretien : ${escapeHtml(formatDateFr(player.interviewDate))}</span>` : "",
+            player.interviewDate
+              ? `<span class="meta-item">Entretien n°${escapeHtml(player.interviewNumber || "")} du ${escapeHtml(formatDateFr(player.interviewDate))}</span>`
+              : "",
           ]
             .filter(Boolean)
             .join("")}
@@ -456,7 +458,11 @@ function drawCategoryForPlayer(doc, cat, pdata, player) {
     y += 5;
   }
   if (player.interviewDate) {
-    doc.text("Date de l'entretien : " + formatDateFr(player.interviewDate), marginL, y);
+    doc.text(
+      `Entretien n°${player.interviewNumber || ""} du ${formatDateFr(player.interviewDate)}`,
+      marginL,
+      y,
+    );
     y += 5;
   }
   doc.text(
@@ -583,7 +589,11 @@ function drawSynthForPlayer(doc, pdata, player) {
     y += 5;
   }
   if (player.interviewDate) {
-    doc.text("Date de l'entretien : " + formatDateFr(player.interviewDate), marginL, y);
+    doc.text(
+      `Entretien n°${player.interviewNumber || ""} du ${formatDateFr(player.interviewDate)}`,
+      marginL,
+      y,
+    );
     y += 5;
   }
   doc.text(
@@ -694,6 +704,7 @@ function levelLabel(val) {
 function playerInfoRows(player) {
   const rows = [["Nom du joueur", player.name]];
   if (player.coach) rows.push(["Entraîneur", player.coach]);
+  if (player.interviewNumber) rows.push(["N° entretien", player.interviewNumber]);
   if (player.interviewDate) rows.push(["Date de l'entretien", formatDateFr(player.interviewDate)]);
   rows.push(["Date export", new Date().toLocaleDateString("fr-FR")]);
   return rows;
@@ -768,7 +779,12 @@ async function exportExcel() {
 
 function attachGlobalEvents() {
   document.getElementById("addPlayerBtn").addEventListener("click", addPlayer);
-  ["newPlayerName", "newPlayerCoach", "newPlayerInterviewDate"].forEach((id) => {
+  [
+    "newPlayerName",
+    "newPlayerCoach",
+    "newPlayerInterviewDate",
+    "newPlayerInterviewNumber",
+  ].forEach((id) => {
     document.getElementById(id).addEventListener("keydown", (e) => {
       if (e.key === "Enter") addPlayer();
     });
@@ -785,9 +801,10 @@ async function addPlayer() {
   const nameInp = document.getElementById("newPlayerName");
   const coachInp = document.getElementById("newPlayerCoach");
   const interviewDateInp = document.getElementById("newPlayerInterviewDate");
+  const interviewNumberInp = document.getElementById("newPlayerInterviewNumber");
   const catSel = document.getElementById("newPlayerCat");
 
-  for (const inp of [nameInp, coachInp, interviewDateInp]) {
+  for (const inp of [nameInp, coachInp, interviewDateInp, interviewNumberInp]) {
     if (!inp.value.trim()) {
       inp.focus();
       inp.reportValidity();
@@ -802,11 +819,13 @@ async function addPlayer() {
     catId: catSel.value,
     coach: coachInp.value.trim(),
     interviewDate: interviewDateInp.value,
+    interviewNumber: interviewNumberInp.value.trim(),
   });
   await saveIndex();
   nameInp.value = "";
   coachInp.value = "";
   interviewDateInp.value = "";
+  interviewNumberInp.value = "";
   currentPlayerId = id;
   currentView = "cat";
   showingPreview = false;
