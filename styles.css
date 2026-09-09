@@ -125,16 +125,33 @@ header.top {
   font-size: 14px;
   color-scheme: dark;
 }
-.add-player-bar input[type="date"] {
-  min-width: 140px;
-}
 .add-player-bar input[type="text"]::placeholder,
 .add-player-bar input[type="date"]::placeholder {
   color: #c7d6e8;
 }
-.add-player-bar input[type="date"]::-webkit-calendar-picker-indicator {
-  filter: invert(1);
-  cursor: pointer;
+.date-field {
+  position: relative;
+  flex: 1;
+  min-width: 150px;
+  display: flex;
+}
+.date-field input[type="date"] {
+  width: 100%;
+  min-width: 0;
+  padding-right: 32px;
+}
+.date-field-icon {
+  position: absolute;
+  right: 10px;
+  top: 50%;
+  transform: translateY(-50%);
+  width: 16px;
+  height: 16px;
+  color: #c7d6e8;
+  pointer-events: none;
+}
+.date-field input[type="date"]::-webkit-calendar-picker-indicator {
+  opacity: 0;
 }
 .add-player-bar select {
   appearance: none;
@@ -730,7 +747,7 @@ main {
     align-items: stretch;
   }
   .add-player-bar input[type="text"],
-  .add-player-bar input[type="date"],
+  .date-field,
   .add-player-bar select,
   .add-player-bar button {
     width: 100%;
