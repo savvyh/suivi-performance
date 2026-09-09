@@ -37,11 +37,15 @@
           />
           <div class="date-field">
             <input
-              type="date"
-              id="newPlayerInterviewDate"
-              placeholder="Date de l'entretien"
+              type="text"
+              id="newPlayerInterviewDateDisplay"
+              class="date-field-display"
+              placeholder="jj/mm/aaaa"
+              inputmode="numeric"
+              autocomplete="off"
               required
             />
+            <input type="date" id="newPlayerInterviewDate" class="date-field-native" tabindex="-1" aria-hidden="true" />
             <svg
               class="date-field-icon"
               viewBox="0 0 24 24"

@@ -96,6 +96,10 @@ function formatDateFr(iso) {
   const [y, m, d] = iso.split("-");
   return d && m && y ? `${d}/${m}/${y}` : iso;
 }
+function parseDateFrToIso(fr) {
+  const match = (fr || "").trim().match(/^(\d{2})\/(\d{2})\/(\d{4})$/);
+  return match ? `${match[3]}-${match[2]}-${match[1]}` : "";
+}
 function catLabel(id) {
   const c = CATEGORIES.find((c) => c.id === id);
   return c ? c.label : "";
@@ -777,12 +781,37 @@ async function exportExcel() {
   XLSX.writeFile(wb, fname.replace(/\s+/g, "_"));
 }
 
+function setupInterviewDateField() {
+  const display = document.getElementById("newPlayerInterviewDateDisplay");
+  const native = document.getElementById("newPlayerInterviewDate");
+  const icon = document.querySelector(".date-field-icon");
+  if (!display || !native || !icon) return;
+
+  function openPicker() {
+    if (typeof native.showPicker === "function") {
+      try {
+        native.showPicker();
+        return;
+      } catch (e) {}
+    }
+    native.focus();
+  }
+  icon.addEventListener("click", openPicker);
+
+  native.addEventListener("change", () => {
+    display.value = formatDateFr(native.value);
+  });
+  display.addEventListener("input", () => {
+    native.value = parseDateFrToIso(display.value);
+  });
+}
+
 function attachGlobalEvents() {
   document.getElementById("addPlayerBtn").addEventListener("click", addPlayer);
   [
     "newPlayerName",
     "newPlayerCoach",
-    "newPlayerInterviewDate",
+    "newPlayerInterviewDateDisplay",
     "newPlayerInterviewNumber",
   ].forEach((id) => {
     document.getElementById(id).addEventListener("keydown", (e) => {
@@ -795,21 +824,28 @@ function attachGlobalEvents() {
     currentView = "cat";
     renderPlayerArea();
   });
+  setupInterviewDateField();
 }
 
 async function addPlayer() {
   const nameInp = document.getElementById("newPlayerName");
   const coachInp = document.getElementById("newPlayerCoach");
-  const interviewDateInp = document.getElementById("newPlayerInterviewDate");
+  const interviewDateDisplay = document.getElementById("newPlayerInterviewDateDisplay");
+  const interviewDateNative = document.getElementById("newPlayerInterviewDate");
   const interviewNumberInp = document.getElementById("newPlayerInterviewNumber");
   const catSel = document.getElementById("newPlayerCat");
 
-  for (const inp of [nameInp, coachInp, interviewDateInp, interviewNumberInp]) {
+  for (const inp of [nameInp, coachInp, interviewNumberInp]) {
     if (!inp.value.trim()) {
       inp.focus();
       inp.reportValidity();
       return;
     }
+  }
+  if (!interviewDateNative.value) {
+    interviewDateDisplay.focus();
+    interviewDateDisplay.reportValidity();
+    return;
   }
 
   const id = "p" + Date.now() + Math.floor(Math.random() * 1000);
@@ -818,13 +854,14 @@ async function addPlayer() {
     name: nameInp.value.trim(),
     catId: catSel.value,
     coach: coachInp.value.trim(),
-    interviewDate: interviewDateInp.value,
+    interviewDate: interviewDateNative.value,
     interviewNumber: interviewNumberInp.value.trim(),
   });
   await saveIndex();
   nameInp.value = "";
   coachInp.value = "";
-  interviewDateInp.value = "";
+  interviewDateDisplay.value = "";
+  interviewDateNative.value = "";
   interviewNumberInp.value = "";
   currentPlayerId = id;
   currentView = "cat";
