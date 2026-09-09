@@ -24,7 +24,7 @@ let showingPreview = false;
 function emptyPlayerData() {
   const data = {};
   CATEGORIES.forEach((c) => {
-    data[c.id] = { competencies: {}, themes: {}, bilan: {} };
+    data[c.id] = { competencies: {}, bilan: {} };
   });
   data.synth = { domains: {} };
   return data;
@@ -91,6 +91,11 @@ function escapeHtml(s) {
       ],
   );
 }
+function formatDateFr(iso) {
+  if (!iso) return "";
+  const [y, m, d] = iso.split("-");
+  return d && m && y ? `${d}/${m}/${y}` : iso;
+}
 function catLabel(id) {
   const c = CATEGORIES.find((c) => c.id === id);
   return c ? c.label : "";
@@ -145,7 +150,7 @@ async function renderPlayerArea() {
         <div class="player-meta">
           ${[
             player.coach ? `<span class="meta-item">Entraîneur : ${escapeHtml(player.coach)}</span>` : "",
-            player.season ? `<span class="meta-item">Saison : ${escapeHtml(player.season)}</span>` : "",
+            player.interviewDate ? `<span class="meta-item">Date de l'entretien : ${escapeHtml(formatDateFr(player.interviewDate))}</span>` : "",
           ]
             .filter(Boolean)
             .join("")}
@@ -235,15 +240,7 @@ function renderCategoryHTML(cat, pdata, playerName) {
     .join("");
 
   const themesHtml = cat.themes
-    .map((th) => {
-      const active = cd.themes[th];
-      return `
-    <div class="theme-item ${active ? "active" : ""}" data-cat="${cat.id}" data-theme="${escapeHtml(th)}">
-      <span class="box">${CHECK_SVG}</span>
-      <span class="lbl">${escapeHtml(th)}</span>
-    </div>
-  `;
-    })
+    .map((th) => `<div class="theme-item">${escapeHtml(th)}</div>`)
     .join("");
 
   const bilanHtml = BILAN_FIELDS.map(
@@ -274,7 +271,7 @@ function renderCategoryHTML(cat, pdata, playerName) {
     </div>
     <div class="export-row">
       <button class="btn btn-navy" id="exportOne">Exporter PDF joueuse : ${escapeHtml(playerName)}</button>
-      <button class="btn btn-outline" id="exportAll">Exporter PDF toutes les joueuses de la catégorie ${escapeHtml(cat.label)}</button>
+      <button class="btn btn-navy" id="exportOneExcel">Exporter Excel joueuse : ${escapeHtml(playerName)}</button>
     </div>
   `;
 }
@@ -321,6 +318,7 @@ function renderSynthHTML(pdata, playerName) {
     </div>
     <div class="export-row">
       <button class="btn btn-navy" id="exportOne">Exporter PDF - ${escapeHtml(playerName)}</button>
+      <button class="btn btn-navy" id="exportOneExcel">Exporter Excel - ${escapeHtml(playerName)}</button>
     </div>
   `;
 }
@@ -411,16 +409,6 @@ function attachPlayerAreaEvents() {
       scheduleSave(currentPlayerId);
     });
   });
-  document.querySelectorAll(".theme-item[data-theme]").forEach((chip) => {
-    chip.addEventListener("click", () => {
-      const catId = chip.dataset.cat,
-        th = chip.dataset.theme;
-      const cd = playersCache[currentPlayerId][catId];
-      cd.themes[th] = !cd.themes[th];
-      renderPlayerArea();
-      scheduleSave(currentPlayerId);
-    });
-  });
   document.querySelectorAll("textarea[data-field]").forEach((ta) => {
     ta.addEventListener("input", () => {
       const catId = ta.dataset.cat,
@@ -430,9 +418,9 @@ function attachPlayerAreaEvents() {
     });
   });
   const exOne = document.getElementById("exportOne");
-  const exAll = document.getElementById("exportAll");
-  if (exOne) exOne.addEventListener("click", () => exportPDF(false));
-  if (exAll) exAll.addEventListener("click", () => exportPDF(true));
+  if (exOne) exOne.addEventListener("click", exportPDF);
+  const exOneExcel = document.getElementById("exportOneExcel");
+  if (exOneExcel) exOneExcel.addEventListener("click", exportExcel);
 }
 
 function drawCategoryForPlayer(doc, cat, pdata, player) {
@@ -467,8 +455,8 @@ function drawCategoryForPlayer(doc, cat, pdata, player) {
     doc.text("Nom de l'entraîneur : " + player.coach, marginL, y);
     y += 5;
   }
-  if (player.season) {
-    doc.text("Saison : " + player.season, marginL, y);
+  if (player.interviewDate) {
+    doc.text("Date de l'entretien : " + formatDateFr(player.interviewDate), marginL, y);
     y += 5;
   }
   doc.text(
@@ -594,8 +582,8 @@ function drawSynthForPlayer(doc, pdata, player) {
     doc.text("Nom de l'entraîneur : " + player.coach, marginL, y);
     y += 5;
   }
-  if (player.season) {
-    doc.text("Saison : " + player.season, marginL, y);
+  if (player.interviewDate) {
+    doc.text("Date de l'entretien : " + formatDateFr(player.interviewDate), marginL, y);
     y += 5;
   }
   doc.text(
@@ -681,38 +669,106 @@ function drawSynthForPlayer(doc, pdata, player) {
   );
 }
 
-async function exportPDF(allInCategory) {
+async function exportPDF() {
   const { jsPDF } = window.jspdf;
   const doc = new jsPDF({ unit: "mm", format: "a4" });
   const player = playersIndex.find((p) => p.id === currentPlayerId);
   const isSynth = currentView === "synth";
-  const cat = isSynth
-    ? null
-    : CATEGORIES.find((c) => c.id === player.catId) || CATEGORIES[0];
+  const pdata = await loadPlayerData(player.id);
 
-  const targets = allInCategory
-    ? playersIndex.filter((p) => p.catId === player.catId)
-    : [player];
-  let first = true;
-  for (const p of targets) {
-    const pdata = await loadPlayerData(p.id);
-    if (!first) doc.addPage();
-    first = false;
-    if (isSynth) {
-      drawSynthForPlayer(doc, pdata, p);
-    } else {
-      drawCategoryForPlayer(doc, cat, pdata, p);
-    }
+  if (isSynth) {
+    drawSynthForPlayer(doc, pdata, player);
+  } else {
+    const cat = CATEGORIES.find((c) => c.id === player.catId) || CATEGORIES[0];
+    drawCategoryForPlayer(doc, cat, pdata, player);
   }
-  const fname = allInCategory
-    ? `ESHB_${isSynth ? "Synthese" : cat.label}_joueuses.pdf`
-    : `ESHB_${isSynth ? "Synthese" : cat.label}_${player.name}.pdf`;
+  const fname = `ESHB_${isSynth ? "Synthese" : CATEGORIES.find((c) => c.id === player.catId)?.label || ""}_${player.name}.pdf`;
   doc.save(fname.replace(/\s+/g, "_"));
+}
+
+function levelLabel(val) {
+  const l = LEVELS.find((l) => l.k === val);
+  return l ? l.label : "";
+}
+
+function playerInfoRows(player) {
+  const rows = [["Nom du joueur", player.name]];
+  if (player.coach) rows.push(["Entraîneur", player.coach]);
+  if (player.interviewDate) rows.push(["Date de l'entretien", formatDateFr(player.interviewDate)]);
+  rows.push(["Date export", new Date().toLocaleDateString("fr-FR")]);
+  return rows;
+}
+
+function buildCategorySheetAOA(cat, pdata, player) {
+  const cd = pdata[cat.id];
+  const rows = [
+    ["Evian Sports Handball"],
+    [cat.full],
+    [cat.objectif],
+    [],
+    ...playerInfoRows(player),
+    [],
+    ["Section", "Compétence", "Niveau"],
+  ];
+  cat.sections.forEach((sec) => {
+    sec.i.forEach((item) => {
+      const key = sec.t + "|" + item;
+      const val = cd.competencies[key] || "";
+      rows.push([sec.t, item, levelLabel(val)]);
+    });
+  });
+  rows.push([]);
+  rows.push(["Bilan entraîneur"]);
+  BILAN_FIELDS.forEach((f) => {
+    rows.push([f.label, cd.bilan[f.k] || ""]);
+  });
+  return rows;
+}
+
+function buildSynthSheetAOA(pdata, player) {
+  const sd = pdata.synth;
+  const rows = [
+    ["Evian Sports Handball"],
+    ["Synthèse de progression générale"],
+    [],
+    ...playerInfoRows(player),
+    [],
+    ["Domaine", "Niveau", "Priorité suivante"],
+  ];
+  SYNTH_DOMAINS.forEach((dom) => {
+    const entry = sd.domains[dom] || { level: "", priorite: "" };
+    rows.push([dom, levelLabel(entry.level), entry.priorite || ""]);
+  });
+  return rows;
+}
+
+function sheetNameFor(name) {
+  const base = (name || "Joueuse").replace(/[\\/?*[\]:]/g, " ").trim();
+  return base.slice(0, 31) || "Joueuse";
+}
+
+async function exportExcel() {
+  const wb = XLSX.utils.book_new();
+  const player = playersIndex.find((p) => p.id === currentPlayerId);
+  const isSynth = currentView === "synth";
+  const pdata = await loadPlayerData(player.id);
+  const aoa = isSynth
+    ? buildSynthSheetAOA(pdata, player)
+    : buildCategorySheetAOA(
+        CATEGORIES.find((c) => c.id === player.catId) || CATEGORIES[0],
+        pdata,
+        player,
+      );
+  const ws = XLSX.utils.aoa_to_sheet(aoa);
+  ws["!cols"] = [{ wch: 28 }, { wch: 45 }, { wch: 16 }];
+  XLSX.utils.book_append_sheet(wb, ws, sheetNameFor(player.name));
+  const fname = `ESHB_${isSynth ? "Synthese" : CATEGORIES.find((c) => c.id === player.catId)?.label || ""}_${player.name}.xlsx`;
+  XLSX.writeFile(wb, fname.replace(/\s+/g, "_"));
 }
 
 function attachGlobalEvents() {
   document.getElementById("addPlayerBtn").addEventListener("click", addPlayer);
-  ["newPlayerName", "newPlayerCoach", "newPlayerSeason"].forEach((id) => {
+  ["newPlayerName", "newPlayerCoach", "newPlayerInterviewDate"].forEach((id) => {
     document.getElementById(id).addEventListener("keydown", (e) => {
       if (e.key === "Enter") addPlayer();
     });
@@ -728,10 +784,10 @@ function attachGlobalEvents() {
 async function addPlayer() {
   const nameInp = document.getElementById("newPlayerName");
   const coachInp = document.getElementById("newPlayerCoach");
-  const seasonInp = document.getElementById("newPlayerSeason");
+  const interviewDateInp = document.getElementById("newPlayerInterviewDate");
   const catSel = document.getElementById("newPlayerCat");
 
-  for (const inp of [nameInp, coachInp, seasonInp]) {
+  for (const inp of [nameInp, coachInp, interviewDateInp]) {
     if (!inp.value.trim()) {
       inp.focus();
       inp.reportValidity();
@@ -745,12 +801,12 @@ async function addPlayer() {
     name: nameInp.value.trim(),
     catId: catSel.value,
     coach: coachInp.value.trim(),
-    season: seasonInp.value.trim(),
+    interviewDate: interviewDateInp.value,
   });
   await saveIndex();
   nameInp.value = "";
   coachInp.value = "";
-  seasonInp.value = "";
+  interviewDateInp.value = "";
   currentPlayerId = id;
   currentView = "cat";
   showingPreview = false;

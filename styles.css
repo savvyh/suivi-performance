@@ -476,45 +476,17 @@ main {
   display: flex;
   align-items: center;
   gap: 9px;
-  padding: 7px 6px;
-  border-radius: 4px;
-  cursor: pointer;
-  user-select: none;
-}
-.theme-item:hover {
-  background: rgba(255, 255, 255, 0.6);
-}
-.theme-item .box {
-  width: 16px;
-  height: 16px;
-  border: 2px solid #b6c0cc;
-  border-radius: 4px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  flex-shrink: 0;
-  background: #fff;
-}
-.theme-item .box svg {
-  display: none;
-  width: 11px;
-  height: 11px;
-}
-.theme-item .lbl {
+  padding: 5px 6px;
   font-size: 13px;
   color: var(--text);
 }
-.theme-item.active .box {
-  background: var(--maitrise-bg);
-  border-color: var(--maitrise);
-}
-.theme-item.active .box svg {
-  display: block;
-  stroke: #1c6b3d;
-}
-.theme-item.active .lbl {
-  font-weight: 600;
-  color: #1c6b3d;
+.theme-item::before {
+  content: "";
+  width: 5px;
+  height: 5px;
+  border-radius: 50%;
+  background: #b6c0cc;
+  flex-shrink: 0;
 }
 
 .bilan {
